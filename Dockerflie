@@ -1,0 +1,26 @@
+# 第一阶段：使用Maven镜像构建Spring Boot应用
+FROM maven:3.8.1-jdk-11 AS build
+WORKDIR /app
+# 第一阶段：使用Maven官方镜像进行构建
+FROM maven:3.8.4-openjdk-11 AS build
+WORKDIR /app
+
+# 复制pom.xml文件和源码到工作目录
+COPY pom.xml .
+COPY src src
+
+# 执行Maven构建，跳过测试
+RUN mvn clean package -DskipTests
+
+# 第二阶段：使用OpenJDK官方镜像运行应用
+FROM openjdk:11-jre-slim
+WORKDIR /app
+
+# 从构建阶段复制构建好的jar文件
+COPY --from=build /app/target/*.jar app.jar
+
+# 暴露8080端口，假设应用使用该端口
+EXPOSE 8081
+
+# 设置容器启动命令
+ENTRYPOINT ["java", "-jar", "app.jar"]
